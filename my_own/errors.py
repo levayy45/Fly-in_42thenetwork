@@ -1,10 +1,5 @@
-class FlyInError(Exception):
-    """Base class of every error this project raises."""
+class ParsingError(Exception):
+    """General parsing error."""
 
-
-class NetworkError(FlyInError):
-    """Raised when the zone network is built or queried incorrectly."""
-
-
-class ParseError(FlyInError):
-    pass
+class FileCheckError(ParsingError):
+    """Raise an error if the file does not exist or cannot be accessed."""

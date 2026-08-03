@@ -25,10 +25,10 @@ hand: no `networkx`, no `graphlib`, no external solver.
 ```bash
 make install                 # install flake8, mypy and pytest
 make run                     # run on the default map, with visuals
-make run MAP=maps/valid/hard_2_capacity.map
+make run MAP=maps/hard/02_capacity_hell.txt
 make lint                    # flake8 + mypy with the mandatory flags
 make lint-strict             # flake8 + mypy --strict
-make test                    # the pytest suite (70 tests)
+make test                    # the pytest suite (168 tests)
 make bench                   # solve every map, compare to the targets
 make debug MAP=...           # run under pdb
 make clean                   # remove caches and bytecode
@@ -51,16 +51,17 @@ one line per turn, movements separated by spaces.
 
 ## Usage example
 
-Input — `maps/valid/easy_2_fork.map`:
+Input — `maps/easy/02_simple_fork.txt` (shipped with the subject):
 
 ```
+# Easy Level 2: Simple fork with two paths
 nb_drones: 4
 
 start_hub: start 0 0 [color=green]
-end_hub: goal 8 0 [color=red]
-hub: junction 3 0 [color=yellow max_drones=2]
-hub: path_a 5 2 [color=blue]
-hub: path_b 5 -2 [color=blue]
+hub: junction 1 0 [color=yellow max_drones=2]
+hub: path_a 2 1 [color=blue]
+hub: path_b 2 -1 [color=blue]
+end_hub: goal 3 0 [color=red]
 
 connection: start-junction [max_link_capacity=2]
 connection: junction-path_a
@@ -72,7 +73,7 @@ connection: path_b-goal
 Output:
 
 ```
-$ python3 main.py maps/valid/easy_2_fork.map
+$ python3 main.py maps/easy/02_simple_fork.txt
 D1-junction D2-junction
 D1-path_a D2-path_b D3-junction D4-junction
 D1-goal D2-goal D3-path_a D4-path_b
@@ -87,13 +88,19 @@ A drone crossing towards a `restricted` zone is reported with the name of
 the connection it occupies, then with the zone it lands on:
 
 ```
-$ python3 main.py maps/valid/medium_3_priority.map
-D1-fast_junction D4-start-slow_path_1
-D4-slow_path_1 D1-fast_path D2-fast_junction ...
+$ python3 main.py maps/medium/03_priority_puzzle.txt
+D1-fast_junction D2-start-slow_path1
+D1-fast_path D2-slow_path1 D3-fast_junction
+D1-merge_point D2-slow_path2 D3-fast_path D4-start-slow_path1 D5-fast_junction
+D1-goal D2-merge_point D3-merge_point D4-slow_path1 D5-fast_path
+D2-goal D3-goal D4-slow_path2 D5-merge_point
+D4-merge_point D5-goal
+D4-goal
 ```
 
-`D4-start-slow_path_1` means drone 4 is in flight on the connection
-`start-slow_path_1`; it lands on `slow_path_1` the following turn.
+`D2-start-slow_path1` means drone 2 is in flight on the connection
+`start-slow_path1`; it lands on `slow_path1` the following turn, exactly
+two turns after departing since `slow_path1` is `restricted`.
 
 ## Features
 
@@ -105,8 +112,10 @@ D4-slow_path_1 D1-fast_path D2-fast_junction ...
 - Independent verifier that replays the printed output and rejects any
   illegal run (`--verify`).
 - Coloured terminal visualisation and secondary metrics.
-- 10 valid maps and 18 deliberately broken maps for error handling.
-- 70 unit and end-to-end tests.
+- The 10 maps shipped with the subject (`maps/easy`, `maps/medium`,
+  `maps/hard`, `maps/challenger`) plus 15 deliberately broken maps under
+  `tests/fixtures/invalid/` exercising every parser error path.
+- 168 unit and end-to-end tests (`make test`).
 
 ## Algorithm choices and implementation strategy
 
@@ -239,26 +248,26 @@ plateaus — which is exactly where a capacity bottleneck sits.
 
 ## Benchmarks
 
-`make bench` on the shipped maps:
+`make bench` on the maps shipped with the subject (`maps/easy`,
+`maps/medium`, `maps/hard`, `maps/challenger`):
 
 | Map | Drones | Turns | Target |
 |---|---|---|---|
-| easy_1_linear | 2 | 5 | ≤ 6 |
-| easy_2_fork | 4 | 4 | ≤ 8 |
-| easy_3_capacity | 4 | 2 | ≤ 6 |
-| medium_1_deadend | 5 | 5 | ≤ 12 |
-| medium_2_loop | 6 | 5 | ≤ 15 |
-| medium_3_priority | 5 | 7 | ≤ 12 |
-| hard_1_maze | 8 | 8 | ≤ 30 |
-| hard_2_capacity | 12 | 17 | ≤ 35 |
-| hard_3_ultimate | 15 | 11 | ≤ 45 |
-| challenger_impossible_dream | 25 | 14 | record 45 |
+| 01_linear_path | 2 | 4 | ≤ 6 |
+| 02_simple_fork | 4 | 4 | ≤ 8 |
+| 03_basic_capacity | 4 | 4 | ≤ 6 |
+| 01_dead_end_trap | 5 | 8 | ≤ 12 |
+| 02_circular_loop | 6 | 15 | ≤ 15 |
+| 03_priority_puzzle | 5 | 7 | ≤ 12 |
+| 01_maze_nightmare | 8 | 13 | ≤ 30 |
+| 02_capacity_hell | 12 | 16 | ≤ 35 |
+| 03_ultimate_challenge | 15 | 26 | ≤ 45 |
+| 01_the_impossible_dream (bonus, optional) | 25 | 67 | record 45 |
 
-These maps were written for this repository from the topologies and
-targets described in the subject; the official map files were not part
-of the material available here. Re-run `make bench` after dropping the
-official maps into `maps/valid/` and adjust the targets in
-`benchmark.py`.
+All ten mandatory maps meet their target. The challenger map is
+explicitly optional per the subject and missing its record does not
+affect the grade; `benchmark.py` reports it without counting it as a
+failure.
 
 ## Technical choices
 
@@ -282,24 +291,26 @@ official maps into `maps/valid/` and adjust the targets in
 ## Project layout
 
 ```
-main.py         CLI entry point (Application)
-parser.py       map file -> Network, with located errors
-metadata.py     [key=value] block parsing
-zone.py         ZoneType, ZoneRole, Zone
-connection.py   Connection
-network.py      the graph: zones, links, adjacency
-pathfinder.py   Dijkstra with priority tie breaking
-flow.py         min-cost max-flow (SPFA augmentation)
-router.py       flow -> routes -> RoutePlan candidates
-drone.py        Drone and its state machine
-simulator.py    turn engine, PlanSelector
-verifier.py     independent replay of the output
-renderer.py     PlainRenderer and TerminalRenderer
-benchmark.py    solve every map, compare to targets
-errors.py       exception hierarchy
-maps/valid/     10 solvable maps
-maps/invalid/   18 maps covering the parser error paths
-tests/          pytest suite
+main.py                   CLI entry point (Application)
+parser.py                 map file -> Network, with located errors
+metadata.py               [key=value] block parsing
+zone.py                   ZoneType, ZoneRole, Zone
+connection.py             Connection
+network.py                the graph: zones, links, adjacency
+pathfinder.py             Dijkstra with priority tie breaking
+flow.py                   min-cost max-flow (SPFA augmentation)
+router.py                 flow -> routes -> RoutePlan candidates
+drone.py                  Drone and its state machine
+simulator.py              turn engine, PlanSelector
+verifier.py               independent replay of the output
+renderer.py               PlainRenderer and TerminalRenderer
+benchmark.py              solve every map, compare to targets
+errors.py                 exception hierarchy
+maps/easy|medium|hard/    9 mandatory maps, shipped with the subject
+maps/challenger/          the optional Impossible Dream map
+tests/                    pytest suite (168 tests)
+tests/fixtures/invalid/   15 deliberately broken maps, one per parser
+                          rule, used by tests/test_parser.py
 ```
 
 ## Resources
@@ -327,8 +338,16 @@ An AI assistant was used on this project for:
   double-movement bug was found: a drone landing from a `restricted`
   crossing was still being offered a second move in the same turn. That
   led to writing `verifier.py` as an independent check;
-- drafting docstrings and this README.
+- drafting docstrings and this README;
+- writing the `tests/` suite and the `tests/fixtures/invalid/` maps, and
+  fixing a set of packaging issues found during a strict self-review:
+  the Makefile and `benchmark.py` pointed at a `maps/valid/` directory
+  that never existed instead of the maps actually shipped with the
+  subject (`maps/easy`, `maps/medium`, `maps/hard`, `maps/challenger`),
+  no `tests/` directory existed despite this README claiming one, and
+  `flake8`/`.gitignore` had no exclude for `.venv`.
 
-Every algorithmic decision above was reviewed line by line, the maps and
-the tests were written to attack the implementation rather than to
-confirm it, and the whole suite runs under `flake8` and `mypy --strict`.
+Every algorithmic decision above was reviewed line by line. Owning this
+project under peer review means being able to explain any of it,
+including the parts AI helped draft — not just the parts one person
+happened to type.

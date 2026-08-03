@@ -1,11 +1,11 @@
 # Fly-in - drone routing simulation
 #
 # Override the map on the command line, e.g.
-#   make run MAP=maps/valid/hard_2_capacity.map
+#   make run MAP=maps/hard/02_capacity_hell.txt
 
 PYTHON  ?= python3
 PIP     ?= $(PYTHON) -m pip
-MAP     ?= maps/valid/easy_2_fork.map
+MAP     ?= maps/easy/02_simple_fork.txt
 FLAGS   ?= --visual --metrics --verify
 
 MYPY_FLAGS = --warn-return-any --warn-unused-ignores \

@@ -1,8 +1,8 @@
 """Entry point of the Fly-in drone routing simulator.
 
 Usage:
-    python3 main.py maps/valid/easy_1_linear.map
-    python3 main.py maps/valid/hard_2_capacity.map --visual --metrics
+    python3 main.py maps/easy/01_linear_path.txt
+    python3 main.py maps/hard/02_capacity_hell.txt --visual --metrics
 """
 
 import argparse
