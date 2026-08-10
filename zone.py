@@ -18,15 +18,6 @@ class ZoneType(Enum):
     @classmethod
     def from_text(cls, text: str) -> "ZoneType":
         """Convert a raw metadata value into a :class:`ZoneType`.
-
-        Args:
-            text: The value found after ``zone=`` in a metadata block.
-
-        Returns:
-            The matching enum member.
-
-        Raises:
-            ValueError: If ``text`` is not a known zone type.
         """
         for member in cls:
             if member.value == text:
